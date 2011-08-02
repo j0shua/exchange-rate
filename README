@@ -1,0 +1,8 @@
+Hi,
+
+This is a REST-ful implemetation of an API for getting exchange rates.
+
+The user makes a request to exchange-rate.php with a query containing a currency code (like JPY or multiple codes seperated by commas).
+The service then checks the user identity by using HTTP AUTH and if he passed checks him for speeding and then if all is good checks the cache for the data if found, returns that if not it goes to the db loads the data into the cache and returns it.
+
+--Josh
