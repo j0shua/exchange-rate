@@ -1,69 +1,27 @@
 <?php
 
-require_once('Api.class.php');
-require_once('Response.class.php');
+require_once 'config.php';
+require_once 'Api.class.php';
+require_once 'Response.class.php';
+require_once 'Cache.class.php';
 
 // check auth token
-$api = new Api;
+$api = new Api();
 
-    
-ob_start();
 
-try 
-{
-    // check that user is authorixed
-    $user = $api->authorize($token);
+$api->connect_db(DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME);
+$api->connect_users_cache($cache['users']);
+$api->connect_rates_cache($cache['rates']);
 
-    // check for speeding (use memcache NOT db)
-    $api->check_speed($user);
+// check that user is authorixed
+$user = $api->authorize();
 
-    // handle request type
-    $response = $api->handle_request($user, $request);
+// handle request type
+$result = $api->handle_request($user);
 
-    Response::render($response);
-
-} 
-catch (Exception $e) 
-{
-
-    // go through determining the exception
-
-    // prepare response
-    $response = '';
-
-    // render response
-    Response::render($response);
-}
+var_export($result);
+exit;
+Response::render($result['code'], $result['body']);
 
 exit;
-
-
-/*
-exchange_rate
-
-id
-currency char
-conversion_rate
-as_of datetime
-deleted tinyint(1)
-last_modified
-
-
-url:
-method=get_rate
-currency=[JPY, EUR,...]  explode
-day=blahblah
-
-
-CREATE TABLE `exchange_rate` (
-  id int(11) auto increment,
-  `currrency` CHAR(3) NOT NULL,
-  conversion_rate DECIMAL(12,6),
-  as_of datetime on UPDATE CURRENT_TIMESTAMP ??,
-  deleted tinyint(1) default 0,
-  last_modified timestamp on insert current_timestamp,
-  PRIMARY KEY `id`:
-  );
-
-*/
 

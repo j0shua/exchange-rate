@@ -4,8 +4,9 @@ class Cache {
 
     protected $driver;
 
-    public function __construct($type, $config)
+    public function __construct($config)
     {
+        $type = $config['driver'];
         $driver = ucfirst($type).'_Driver';
         $this->driver = new $driver($config);
     }
@@ -13,18 +14,18 @@ class Cache {
 
     public function get($id)
     {
-        $this->dirver->get($id);
+        return $this->driver->get($id);
     }
 
-    public function set($id, $data, $ttl = 0)
+    public function set($id, $data, $lifetime = 0)
     {
-        $this->driver->set($id, $data, $ttl = 0);
+        return $this->driver->set($id, $data, $lifetime);
     }
 
 
     public function delete($id)
     {
-        $this->driver->delelte($id);
+        return $this->driver->delete($id);
     }
 
 }
@@ -50,7 +51,7 @@ interface Cache_Driver {
     public function delete($id);
 	
     // delete old cache items by id and age
-    public function delete_expired($id, $threshold)
+    public function delete_expired($id, $threshold);
 
 } // End Cache Driver
 
@@ -59,24 +60,20 @@ class Memcache_Driver implements Cache_Driver {
     // Cache backend object and flags
     protected $backend;
     protected $flags;
+    protected $lifetime;
 
 	public function __construct($config)
 	{
         $this->backend = new Memcache;
 		$this->flags = FALSE;
+		$this->lifetime = $config['ttl'];
 
         // should really be loaded out of a config!
-		$servers = $config['servers');
-
-		foreach ($servers as $server)
-		{
-			// Make sure all required keys are set
-			$server += array('host' => '127.0.0.1', 'port' => 11211, 'persistent' => FALSE);
-
-			// Add the server to the pool
-			$this->backend->connect($server['host'], $server['port'], (bool) $server['persistent'])
+		$server = $config['servers'];
+			
+        $this->backend->connect($server['host'], $server['port'], (bool) $server['persistent'])
 				or die('Cache: Connection failed: '.$server['host']);
-		}
+
 
 	}
 
@@ -87,14 +84,13 @@ class Memcache_Driver implements Cache_Driver {
 
 	public function set($id, $data, $lifetime = 0)
 	{
-		if ($lifetime !== 0)
-		{
-			// Memcache driver expects unix timestamp
-			$lifetime += time();
-		}
+        if ($lifetime === 0)
+        {
+            $lifetime = $this->lifetime + time();
+        }
 
 		// Set a new value
-		return $this->backend->set($id, $data, $this->flags, $lifetime);
+		$this->backend->set($id, $data, $this->flags, $lifetime);
 	}
 
 	public function delete($id, $tag = FALSE)
