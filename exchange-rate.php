@@ -1,7 +1,7 @@
 <?php
 
-require_once('api.class.php');
-require_once('response.class.php');
+require_once('Api.class.php');
+require_once('Response.class.php');
 
 // check auth token
 $api = new Api;
